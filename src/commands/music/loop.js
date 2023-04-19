@@ -1,4 +1,4 @@
-const { ApplicationCommandOptionType  } = require('discord.js');
+const { ApplicationCommandOptionType } = require('discord.js');
 const { useQueue } = require('discord-player')
 
 module.exports = {
@@ -6,7 +6,7 @@ module.exports = {
     description: 'Tipos de loop!',
     //devOnly: Boolean,
     //testOnly: Boolean,
-    //deleted: true,
+    deleted: true,
     options: [
         {
             name: 'tipo',
@@ -19,14 +19,14 @@ module.exports = {
     callback: async (client, interaction) => {
         await interaction.deferReply();
         const queue = useQueue(interaction.guild.id);
-        if(!queue.node.isPlaying()){
+        if (!queue.node.isPlaying()) {
             interaction.editReply('Não estou tocando nenhuma música no momento.');
             return;
         }
 
         let loop = interaction.options.getNumber('tipo');
 
-        if(loop === 0) {
+        if (loop === 0) {
             interaction.editReply(`O ${interaction.user} desativou o loop`);
             queue.setRepeatMode(loop);
             return;
