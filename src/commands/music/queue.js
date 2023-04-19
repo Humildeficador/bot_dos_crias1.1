@@ -9,39 +9,53 @@ module.exports = {
     //deleted: true,
 
     callback: async (client, interaction) => {
-        await interaction.deferReply();
+        try {
+            /* Nenhuma música tocando */
+            const queue = useQueue(interaction.guild);
+            if ((!queue) || queue.node.isIdle() && !queue.node.isBuffering() ) {
+                interaction.reply({
+                    content: 'Não estou tocando nenhuma música no momento.',
+                    ephemeral: true,
+                });
+                return;
+            }
+            const tracks = queue.tracks.toArray();
+            const currentTrack = queue.currentTrack;
 
-        const queue = useQueue(interaction.guild);
-        if (!queue) return interaction.editReply('Nenhuma música tocando no momento');
-        const tracks = queue.tracks.toArray();
-        const currentTrack = queue.currentTrack;
+            /* Nenhuma música na fila */
+            if (!tracks[0]) {
+                const embed = new EmbedBuilder()
+                    .setDescription(`**\`Musica Atual:\n\`**${currentTrack.title} - ${currentTrack.requestedBy}`)
+                    .setThumbnail(currentTrack.thumbnail)
+                    .setColor('Random');
 
-        /* const track = {
-            title: tracks[0].title,
-            requestedBy: tracks[0].requestedBy,
-            duration: tracks[0].duration,
-            thumbnail:tracks[0].thumbnail,
-        } */
-        
-        if (!tracks[0]) {
+                await interaction.reply({ embeds: [embed] });
+                return;
+            };
+
+            /* String com as músicas da fila */
+            const queueString = tracks.slice(0, 10).map((v, i) => {
+                return `\`${i + 1}) [${v.duration}]\` ${v.title} - ${v.requestedBy}`;
+            }).join('\n');
+
+            /* Tudo OK */
             const embed = new EmbedBuilder()
-                .setDescription(`**\`Musica Atual:\n\`**${currentTrack.title} - ${currentTrack.requestedBy}`)
+                .setDescription(`**\`Musica Atual:\n\`**${currentTrack.title} - ${currentTrack.requestedBy}\n\n **Fila:**\n${queueString}`)
                 .setThumbnail(currentTrack.thumbnail)
+                .setColor('Random');
 
-            await interaction.editReply({ embeds: [embed] });
-            return;
+            await interaction.reply({ embeds: [embed] });
+            queue.node.resume();
+
+        } catch (error) {
+            console.log(`Ocorreu um erro ${error}`);
+            const embed = new EmbedBuilder()
+                .setDescription(`${interaction.user} Tente novamente em alguns segundos...`)
+                .setColor('Random');
+            await interaction.reply({
+                content: { embeds: [embed] },
+                ephemeral: true,
+            });
         }
-
-        const queueString = tracks.slice(0,10).map((v, i) => {
-            return `\`${i + 1}) [${v.duration}]\` ${v.title} - ${v.requestedBy}`;
-        }).join('\n');
-
-        const embed = new EmbedBuilder()
-            .setDescription(`**\`Musica Atual:\n\`**${currentTrack.title} - ${currentTrack.requestedBy}\n\n **Fila:**\n${queueString}`)
-            .setThumbnail(currentTrack.thumbnail)
-            .setColor('Random');
-
-        await interaction.editReply({ embeds: [embed] });
-        queue.node.resume()
     },
 };
