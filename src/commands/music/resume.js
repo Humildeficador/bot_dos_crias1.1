@@ -1,4 +1,5 @@
 const { useQueue } = require('discord-player');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
     name: 'resume',
@@ -8,12 +9,84 @@ module.exports = {
     //deleted: true,
 
     callback: async (client, interaction) => {
-        await interaction.deferReply();
+        try {
+            const channelBot = interaction.guild.members.me.voice.channel;
+            const channelMember = interaction.member.voice.channel;
+            /* Verificando se está em um canal de voz */
+            if (!channelMember) {
+                const embed = new EmbedBuilder()
+                    .setDescription(`${interaction.user} você precisa está em um canal de voz para usar esse comando.`)
+                    .setColor('Random');
+                await interaction.reply({
+                    embeds: [embed], 
+                    ephemeral: true,
+                });
+                return;
+            };
 
-        /* const queue = client.player.nodes.create(interaction.guild); */
-        const queue = useQueue(interaction.guild);
+            /* Membro no mesmo canal do bot */
+            if (channelBot != channelMember) {
+                const embed = new EmbedBuilder()
+                    .setDescription(`${interaction.user} você precisa está no mesmo canal de voz que eu para usar esse comando.`)
+                    .setColor('Random');
+                await interaction.reply({
+                    embeds: [embed], 
+                    ephemeral: true,
+                });
+                return;
+            };
 
-        await interaction.editReply(`O ${interaction.user} despausou a música \n${queue.currentTrack}`)
-        queue.node.resume()
+            /* Cria a fila*/
+            const queue = useQueue(interaction.guild);
+
+            /* Verifica se está pausado */
+            if (queue.node.isIdle()) {
+                const embed = new EmbedBuilder()
+                    .setDescription(`${interaction.user} nenhuma música tocando no momento.`)
+                    .setColor('Random');
+                await interaction.reply({
+                    embeds: [embed], 
+                    ephemeral: true,
+                });
+                return;
+            } else if (!queue.node.isPaused()) {
+                const embed = new EmbedBuilder()
+                    .setDescription(`${interaction.user} a música não está pausada.`)
+                    .setColor('Random');
+                await interaction.reply({
+                    embeds: [embed], 
+                    ephemeral: true,
+                });
+                return;
+            };
+
+            console.log (queue.node.isPaused())
+            console.log (queue.node.isPlaying())
+            console.log (queue.node.isIdle())
+
+            /* Pega a track atual */
+            const currentTrack = queue.currentTrack;
+
+            /* Tudo OK */
+            const embed = new EmbedBuilder()
+                .setDescription(`${interaction.user} despausou a música.\n\n${currentTrack.title} - ${currentTrack.requestedBy}`)
+                .setThumbnail(currentTrack.thumbnail)
+                .setColor('Random');
+            await interaction.reply({
+                embeds: [embed],
+                ephemeral: false,
+            });
+            queue.node.resume();
+
+        } catch (error) {
+            console.log(`Ocorreu um erro ${error}`);
+            const embed = new EmbedBuilder()
+                .setDescription(`${interaction.user} Tente novamente em alguns segundos...`)
+                .setColor('Random');
+            await interaction.reply({
+                embeds: [embed],
+                ephemeral: true,
+            });
+        };
     },
 };
