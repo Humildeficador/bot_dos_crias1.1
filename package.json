@@ -17,6 +17,7 @@
     "dotenv": "^16.0.3",
     "erela.js": "^2.4.0",
     "ffmpeg-static": "^5.1.0",
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "play-dl": "^1.9.6"
   }
 }
